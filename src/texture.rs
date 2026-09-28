@@ -7,6 +7,11 @@ pub enum Texture {
         second: Color,
         scale: f32,
     },
+    Stripes {
+        first: Color,
+        second: Color,
+        scale: f32,
+    },
 }
 impl Texture {
     pub fn sample(&self, u: f32, v: f32) -> Color {
@@ -18,6 +23,17 @@ impl Texture {
                 scale,
             } => {
                 if ((u * scale).floor() as i32 + (v * scale).floor() as i32).rem_euclid(2) == 0 {
+                    first
+                } else {
+                    second
+                }
+            }
+            Self::Stripes {
+                first,
+                second,
+                scale,
+            } => {
+                if ((u * scale).floor() as i32).rem_euclid(2) == 0 {
                     first
                 } else {
                     second

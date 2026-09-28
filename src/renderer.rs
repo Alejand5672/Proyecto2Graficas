@@ -5,6 +5,7 @@ use crate::{
     ray::Ray,
     scene::Scene,
 };
+#[derive(Clone, Copy)]
 pub struct RenderConfig {
     pub width: usize,
     pub height: usize,
