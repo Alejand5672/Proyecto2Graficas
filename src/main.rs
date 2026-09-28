@@ -2,6 +2,7 @@ mod camera;
 mod color;
 mod cube;
 mod display;
+mod ellipsoid;
 mod material;
 mod ray;
 mod renderer;

@@ -48,7 +48,4 @@ impl Image {
             pixels: vec![Color::BLACK; w * h],
         }
     }
-    pub fn set(&mut self, x: usize, y: usize, c: Color) {
-        self.pixels[y * self.width + x] = c
-    }
 }

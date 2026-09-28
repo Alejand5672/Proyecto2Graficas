@@ -10,9 +10,9 @@ use raylib::prelude::*;
 /// Visor interactivo. El raytracer se ejecuta solo cuando cambia la cámara.
 pub fn show(scene: Scene, config: RenderConfig) {
     let mut yaw = 0.0_f32;
-    let mut pitch = 0.13_f32;
-    let mut distance = 9.4_f32;
-    let target = Vec3::new(0.0, -0.15, -5.1);
+    let mut pitch = 0.24_f32;
+    let mut distance = 11.2_f32;
+    let target = Vec3::new(0.0, -0.10, -6.1);
     let mut image: Image = render(
         &scene,
         &Camera::orbit(target, distance, yaw, pitch, 55.0),
