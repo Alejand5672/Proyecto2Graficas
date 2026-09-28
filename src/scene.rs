@@ -38,7 +38,7 @@ impl Scene {
             scale: 8.0,
         });
         tire.specular = 0.12;
-        let glass = Material::glass(Texture::Solid(Color::new(0.38, 0.76, 0.88)));
+        let glass = Material::glass(Texture::Solid(Color::new(0.78, 0.91, 0.96)));
         let asphalt = Material::matte(Texture::Checker {
             first: Color::new(0.12, 0.14, 0.16),
             second: Color::new(0.08, 0.09, 0.10),
@@ -72,41 +72,97 @@ impl Scene {
                     half_size: Vec3::new(8.0, 0.25, 2.0),
                     material: sand.clone(),
                 },
-                // Carro: bloque principal, cofre, cabina/ventana y cuatro ruedas cuadradas provisionales.
+                // Rayo McQueen estilizado: los bloques escalonados forman un
+                // auto bajo, con cofre, cabina, cara, ojos y ruedas con rines.
+                // El frente queda hacia la cámara inicial (eje Z positivo).
                 Cube {
-                    center: Vec3::new(0.0, 0.20, -4.4),
-                    half_size: Vec3::new(1.35, 0.48, 0.70),
+                    center: Vec3::new(0.0, 0.02, -4.35),
+                    half_size: Vec3::new(1.38, 0.44, 1.02),
+                    material: car.clone(),
+                },
+                // Cofre en dos alturas: crea una nariz inclinada en vez de un bloque único.
+                Cube {
+                    center: Vec3::new(0.0, 0.38, -3.64),
+                    half_size: Vec3::new(1.16, 0.20, 0.38),
                     material: car.clone(),
                 },
                 Cube {
-                    center: Vec3::new(0.0, 0.68, -4.72),
-                    half_size: Vec3::new(0.74, 0.43, 0.44),
+                    center: Vec3::new(0.0, 0.64, -4.42),
+                    half_size: Vec3::new(0.82, 0.34, 0.48),
+                    material: car.clone(),
+                },
+                // Parabrisas y ojos, colocados sobre la parte frontal de la cabina.
+                Cube {
+                    center: Vec3::new(-0.39, 0.74, -3.91),
+                    half_size: Vec3::new(0.30, 0.24, 0.035),
                     material: glass.clone(),
                 },
                 Cube {
-                    center: Vec3::new(0.0, 0.32, -5.02),
-                    half_size: Vec3::new(1.06, 0.30, 0.28),
+                    center: Vec3::new(0.39, 0.74, -3.91),
+                    half_size: Vec3::new(0.30, 0.24, 0.035),
+                    material: glass.clone(),
+                },
+                Cube {
+                    center: Vec3::new(-0.39, 0.74, -3.865),
+                    half_size: Vec3::new(0.075, 0.105, 0.025),
+                    material: tire.clone(),
+                },
+                Cube {
+                    center: Vec3::new(0.39, 0.74, -3.865),
+                    half_size: Vec3::new(0.075, 0.105, 0.025),
+                    material: tire.clone(),
+                },
+                // Faros, sonrisa oscura y defensa roja para reconocer el personaje.
+                Cube {
+                    center: Vec3::new(-0.86, 0.14, -3.31),
+                    half_size: Vec3::new(0.20, 0.12, 0.035),
+                    material: glass.clone(),
+                },
+                Cube {
+                    center: Vec3::new(0.86, 0.14, -3.31),
+                    half_size: Vec3::new(0.20, 0.12, 0.035),
+                    material: glass.clone(),
+                },
+                Cube {
+                    center: Vec3::new(0.0, -0.13, -3.34),
+                    half_size: Vec3::new(0.48, 0.075, 0.04),
+                    material: tire.clone(),
+                },
+                Cube {
+                    center: Vec3::new(0.0, -0.34, -3.37),
+                    half_size: Vec3::new(1.05, 0.10, 0.12),
                     material: car.clone(),
                 },
+                // Cuatro ruedas cuadradas con un rin claro superpuesto.
                 Cube {
-                    center: Vec3::new(-1.14, -0.34, -4.02),
-                    half_size: Vec3::new(0.27, 0.48, 0.22),
+                    center: Vec3::new(-1.22, -0.38, -3.72),
+                    half_size: Vec3::new(0.25, 0.42, 0.25),
                     material: tire.clone(),
                 },
                 Cube {
-                    center: Vec3::new(1.14, -0.34, -4.02),
-                    half_size: Vec3::new(0.27, 0.48, 0.22),
+                    center: Vec3::new(1.22, -0.38, -3.72),
+                    half_size: Vec3::new(0.25, 0.42, 0.25),
                     material: tire.clone(),
                 },
                 Cube {
-                    center: Vec3::new(-1.14, -0.34, -4.83),
-                    half_size: Vec3::new(0.27, 0.48, 0.22),
+                    center: Vec3::new(-1.22, -0.38, -4.95),
+                    half_size: Vec3::new(0.25, 0.42, 0.25),
                     material: tire.clone(),
                 },
                 Cube {
-                    center: Vec3::new(1.14, -0.34, -4.83),
-                    half_size: Vec3::new(0.27, 0.48, 0.22),
+                    center: Vec3::new(1.22, -0.38, -4.95),
+                    half_size: Vec3::new(0.25, 0.42, 0.25),
                     material: tire.clone(),
+                },
+                Cube {
+                    center: Vec3::new(-1.48, -0.38, -3.72),
+                    half_size: Vec3::new(0.025, 0.18, 0.11),
+                    material: glass.clone(),
+                },
+                Cube {
+                    center: Vec3::new(1.48, -0.38, -3.72),
+                    half_size: Vec3::new(0.025, 0.18, 0.11),
+                    material: glass.clone(),
                 },
                 // Arco de meta construido con cubos: aporta escala a la pista.
                 Cube {
