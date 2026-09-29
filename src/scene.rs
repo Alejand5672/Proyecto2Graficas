@@ -3,10 +3,12 @@ use crate::{
     cube::{Cube, Hit},
     ellipsoid::Ellipsoid,
     material::Material,
+    oval::OvalRing,
     ray::Ray,
     texture::Texture,
     vec3::Vec3,
 };
+
 pub struct Light {
     pub position: Vec3,
     pub color: Color,
@@ -19,428 +21,371 @@ pub struct Skybox {
 pub struct Scene {
     pub cubes: Vec<Cube>,
     pub ellipsoids: Vec<Ellipsoid>,
+    pub oval_rings: Vec<OvalRing>,
     pub lights: Vec<Light>,
     pub skybox: Skybox,
 }
+
+fn add_cube(cubes: &mut Vec<Cube>, center: Vec3, half_size: Vec3, material: &Material) {
+    cubes.push(Cube {
+        center,
+        half_size,
+        material: material.clone(),
+    });
+}
+
+fn add_race_car(
+    ellipsoids: &mut Vec<Ellipsoid>,
+    x: f32,
+    z: f32,
+    scale: f32,
+    paint_slot: f32,
+    paint: &Material,
+    glass: &Material,
+    tire: &Material,
+) {
+    for (dx, dy, dz, rx, ry, rz, material, uv_offset) in [
+        (0.0, -0.67, 0.0, 0.86, 0.40, 1.23, paint, paint_slot),
+        (0.0, -0.46, -0.60, 0.76, 0.27, 0.63, paint, paint_slot),
+        (0.0, -0.27, 0.29, 0.55, 0.32, 0.52, glass, 0.0),
+        (-0.72, -0.74, -0.56, 0.22, 0.34, 0.34, tire, 0.0),
+        (0.72, -0.74, -0.56, 0.22, 0.34, 0.34, tire, 0.0),
+        (-0.72, -0.74, 0.59, 0.22, 0.34, 0.34, tire, 0.0),
+        (0.72, -0.74, 0.59, 0.22, 0.34, 0.34, tire, 0.0),
+    ] {
+        ellipsoids.push(Ellipsoid {
+            center: Vec3::new(x + dx * scale, dy, z + dz * scale),
+            radii: Vec3::new(rx * scale, ry * scale, rz * scale),
+            uv_offset,
+            material: material.clone(),
+        });
+    }
+}
+
 impl Scene {
     pub fn base() -> Self {
-        // Cinco materiales con textura y parámetros propios: asfalto, carro,
-        // llanta, cristal y desierto. El cristal aporta refracción y reflexión.
-        let mut car = Material::matte(Texture::Stripes {
-            first: Color::new(0.86, 0.012, 0.035),
-            second: Color::new(0.48, 0.005, 0.015),
-            scale: 7.0,
+        // Cinco materiales con texturas y parámetros independientes.
+        let mut asphalt = Material::matte(Texture::Checker {
+            first: Color::new(0.105, 0.115, 0.125),
+            second: Color::new(0.075, 0.080, 0.090),
+            scale: 18.0,
         });
-        car.specular = 0.62;
-        car.shininess = 80.0;
-        car.reflectivity = 0.18;
-        let mut tire = Material::matte(Texture::Checker {
-            first: Color::new(0.018, 0.022, 0.028),
-            second: Color::new(0.08, 0.085, 0.09),
-            scale: 8.0,
+        asphalt.specular = 0.28;
+        asphalt.shininess = 48.0;
+        asphalt.reflectivity = 0.06;
+        let mut grass = Material::matte(Texture::Stripes {
+            first: Color::new(0.075, 0.27, 0.055),
+            second: Color::new(0.16, 0.38, 0.075),
+            scale: 26.0,
         });
-        tire.specular = 0.12;
-        let glass = Material::glass(Texture::Solid(Color::new(0.78, 0.91, 0.96)));
-        let asphalt = Material::matte(Texture::Checker {
-            first: Color::new(0.12, 0.14, 0.16),
-            second: Color::new(0.08, 0.09, 0.10),
-            scale: 3.0,
+        grass.specular = 0.06;
+        grass.shininess = 8.0;
+        grass.reflectivity = 0.01;
+        let mut car = Material::matte(Texture::RacePaint);
+        car.specular = 0.68;
+        car.shininess = 92.0;
+        car.reflectivity = 0.20;
+        let mut dark = Material::matte(Texture::Solid(Color::new(0.035, 0.045, 0.060)));
+        dark.specular = 0.14;
+        dark.shininess = 24.0;
+        dark.reflectivity = 0.025;
+        let glass = Material::glass(Texture::Stripes {
+            first: Color::new(0.30, 0.62, 0.82),
+            second: Color::new(0.72, 0.88, 0.95),
+            scale: 6.0,
         });
-        let sand = Material::matte(Texture::Stripes {
-            first: Color::new(0.12, 0.34, 0.08),
-            second: Color::new(0.32, 0.48, 0.12),
-            scale: 9.0,
-        });
+
+        let mut cubes = Vec::new();
+        // Terreno, pit lane y plataforma central.
+        add_cube(
+            &mut cubes,
+            Vec3::new(0.0, -1.38, -8.0),
+            Vec3::new(18.0, 0.28, 26.0),
+            &grass,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(5.65, -1.075, -8.0),
+            Vec3::new(0.82, 0.025, 11.8),
+            &asphalt,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(2.25, -1.09, -8.0),
+            Vec3::new(2.45, 0.035, 9.2),
+            &glass,
+        );
+
+        // Muros y tribunas laterales escalonadas.
+        for side in [-1.0_f32, 1.0] {
+            add_cube(
+                &mut cubes,
+                Vec3::new(side * 10.75, -0.78, -8.0),
+                Vec3::new(0.12, 0.36, 18.6),
+                &glass,
+            );
+            for tier in 0..7 {
+                let t = tier as f32;
+                add_cube(
+                    &mut cubes,
+                    Vec3::new(side * (11.45 + t * 0.52), -0.72 + t * 0.43, -8.0),
+                    Vec3::new(0.62, 0.18, 18.2),
+                    if tier % 2 == 0 { &dark } else { &glass },
+                );
+            }
+        }
+        // Tribuna de la curva norte.
+        for tier in 0..7 {
+            let t = tier as f32;
+            add_cube(
+                &mut cubes,
+                Vec3::new(0.0, -0.68 + t * 0.43, -27.35 - t * 0.52),
+                Vec3::new(10.9 + t * 0.55, 0.18, 0.62),
+                if tier % 2 == 0 { &dark } else { &glass },
+            );
+        }
+        // Tribuna de la curva sur: completa el anillo del estadio.
+        for tier in 0..7 {
+            let t = tier as f32;
+            add_cube(
+                &mut cubes,
+                Vec3::new(0.0, -0.68 + t * 0.43, 11.35 + t * 0.52),
+                Vec3::new(10.9 + t * 0.55, 0.18, 0.62),
+                if tier % 2 == 0 { &dark } else { &glass },
+            );
+        }
+        // Público en tres niveles: suficiente densidad sin usar modelos externos.
+        for row in 0..23 {
+            let z = -25.0 + row as f32 * 1.5;
+            for side in [-1.0_f32, 1.0] {
+                for seat_tier in 0..3 {
+                    let material = match (row + seat_tier) % 3 {
+                        0 => &glass,
+                        1 => &car,
+                        _ => &dark,
+                    };
+                    add_cube(
+                        &mut cubes,
+                        Vec3::new(
+                            side * (11.72 + seat_tier as f32 * 0.54),
+                            0.04 + seat_tier as f32 * 0.43,
+                            z,
+                        ),
+                        Vec3::new(0.24, 0.14, 0.48),
+                        material,
+                    );
+                }
+            }
+        }
+
+        // Boxes y edificios de pits.
+        for bay in 0..7 {
+            let z = -16.0 + bay as f32 * 2.55;
+            add_cube(
+                &mut cubes,
+                Vec3::new(3.10, -0.63, z),
+                Vec3::new(1.18, 0.43, 0.92),
+                if bay % 2 == 0 { &dark } else { &glass },
+            );
+            add_cube(
+                &mut cubes,
+                Vec3::new(3.10, -0.12, z),
+                Vec3::new(1.34, 0.09, 1.05),
+                &glass,
+            );
+        }
+        // Trailers y motorhomes del paddock.
+        for row in 0..4 {
+            for column in 0..5 {
+                let x = -3.8 + column as f32 * 1.55;
+                let z = -15.2 + row as f32 * 2.15;
+                add_cube(
+                    &mut cubes,
+                    Vec3::new(x, -0.78, z),
+                    Vec3::new(0.58, 0.23, 0.78),
+                    if (row + column) % 2 == 0 {
+                        &glass
+                    } else {
+                        &glass
+                    },
+                );
+                add_cube(
+                    &mut cubes,
+                    Vec3::new(x, -0.48, z),
+                    Vec3::new(0.66, 0.07, 0.86),
+                    &dark,
+                );
+            }
+        }
+
+        // Torre de resultados y pantalla gigante.
+        add_cube(
+            &mut cubes,
+            Vec3::new(-1.0, 1.25, -4.7),
+            Vec3::new(0.34, 2.35, 0.34),
+            &dark,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(-1.0, 3.42, -4.7),
+            Vec3::new(1.42, 0.92, 0.28),
+            &glass,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(-1.0, 3.42, -4.39),
+            Vec3::new(1.18, 0.70, 0.035),
+            &glass,
+        );
+
+        // Línea de salida a cuadros.
+        for square in 0..8 {
+            add_cube(
+                &mut cubes,
+                Vec3::new(7.05 + square as f32 * 0.43, -1.015, -5.3),
+                Vec3::new(0.20, 0.018, 0.38),
+                if square % 2 == 0 { &glass } else { &dark },
+            );
+        }
+        // Detalles de Rayo McQueen junto a la meta. El volumen principal se
+        // construye con elipsoides; estos cubos finos aportan acabado de carrera.
+        add_cube(
+            &mut cubes,
+            Vec3::new(8.50, -0.35, -2.89),
+            Vec3::new(0.82, 0.075, 0.11),
+            &car,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(7.98, -0.48, -3.02),
+            Vec3::new(0.07, 0.18, 0.07),
+            &dark,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(9.02, -0.48, -3.02),
+            Vec3::new(0.07, 0.18, 0.07),
+            &dark,
+        );
+        // Franja del cofre, faros y pupilas visibles durante la inspección.
+        add_cube(
+            &mut cubes,
+            Vec3::new(8.50, -0.245, -4.66),
+            Vec3::new(0.11, 0.025, 0.38),
+            &glass,
+        );
+        for x in [8.12_f32, 8.88] {
+            add_cube(
+                &mut cubes,
+                Vec3::new(x, -0.46, -5.12),
+                Vec3::new(0.16, 0.08, 0.035),
+                &glass,
+            );
+        }
+        for x in [8.27_f32, 8.73] {
+            add_cube(
+                &mut cubes,
+                Vec3::new(x, 0.045, -3.78),
+                Vec3::new(0.055, 0.035, 0.075),
+                &dark,
+            );
+        }
+        // Alerones oscuros y franjas claras de los rivales azul y verde.
+        for (x, z) in [(9.72_f32, -3.30_f32), (7.18_f32, -3.45_f32)] {
+            add_cube(
+                &mut cubes,
+                Vec3::new(x, -0.39, z + 0.92),
+                Vec3::new(0.60, 0.06, 0.09),
+                &dark,
+            );
+            add_cube(
+                &mut cubes,
+                Vec3::new(x, -0.27, z - 0.52),
+                Vec3::new(0.075, 0.02, 0.30),
+                &glass,
+            );
+        }
+        // Torres de iluminación.
+        for (x, z) in [(-10.8, -20.0), (10.8, -20.0), (-10.8, 4.0), (10.8, 4.0)] {
+            add_cube(
+                &mut cubes,
+                Vec3::new(x, 2.2, z),
+                Vec3::new(0.13, 2.8, 0.13),
+                &dark,
+            );
+            add_cube(
+                &mut cubes,
+                Vec3::new(x, 4.85, z),
+                Vec3::new(0.62, 0.19, 0.25),
+                &glass,
+            );
+        }
+
+        let mut ellipsoids = Vec::new();
+        add_race_car(&mut ellipsoids, 8.50, -4.02, 1.0, 0.0, &car, &glass, &dark);
+        add_race_car(&mut ellipsoids, 9.72, -3.30, 0.80, 1.0, &car, &glass, &dark);
+        add_race_car(&mut ellipsoids, 7.18, -3.45, 0.80, 2.0, &car, &glass, &dark);
+
         Self {
-            // Boceto estático: pista, desierto y silueta por bloques de un auto saltando.
-            cubes: vec![
-                Cube {
-                    center: Vec3::new(0.0, -1.25, -5.0),
-                    half_size: Vec3::new(8.0, 0.18, 12.0),
+            cubes,
+            ellipsoids,
+            oval_rings: vec![
+                OvalRing {
+                    center: Vec3::new(0.0, -1.055, -8.0),
+                    outer_radii: (10.45, 18.45),
+                    inner_radii: (6.72, 14.72),
+                    material: asphalt.clone(),
+                },
+                OvalRing {
+                    center: Vec3::new(0.0, -1.025, -8.0),
+                    outer_radii: (10.28, 18.28),
+                    inner_radii: (10.05, 18.05),
+                    material: glass.clone(),
+                },
+                OvalRing {
+                    center: Vec3::new(0.0, -1.024, -8.0),
+                    outer_radii: (7.02, 15.02),
+                    inner_radii: (6.76, 14.76),
+                    material: glass.clone(),
+                },
+                OvalRing {
+                    center: Vec3::new(0.0, -1.045, -8.0),
+                    outer_radii: (5.92, 13.10),
+                    inner_radii: (5.20, 12.35),
                     material: asphalt,
-                },
-                Cube {
-                    center: Vec3::new(-5.4, -0.15, -12.0),
-                    half_size: Vec3::new(2.2, 1.0, 1.1),
-                    material: sand.clone(),
-                },
-                Cube {
-                    center: Vec3::new(4.7, -0.35, -13.0),
-                    half_size: Vec3::new(2.8, 0.8, 1.0),
-                    material: sand.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, -0.95, -11.0),
-                    half_size: Vec3::new(8.0, 0.25, 2.0),
-                    material: sand.clone(),
-                },
-                // Rayo McQueen estilizado: los bloques escalonados forman un
-                // auto bajo, con cofre, cabina, cara, ojos y ruedas con rines.
-                // El frente queda hacia la cámara inicial (eje Z positivo).
-                Cube {
-                    center: Vec3::new(0.0, 0.02, -4.35),
-                    half_size: Vec3::new(1.38, 0.44, 1.02),
-                    material: car.clone(),
-                },
-                // Cofre en dos alturas: crea una nariz inclinada en vez de un bloque único.
-                Cube {
-                    center: Vec3::new(0.0, 0.38, -3.64),
-                    half_size: Vec3::new(1.16, 0.20, 0.38),
-                    material: car.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, 0.64, -4.42),
-                    half_size: Vec3::new(0.82, 0.34, 0.48),
-                    material: car.clone(),
-                },
-                // Parabrisas y ojos, colocados sobre la parte frontal de la cabina.
-                Cube {
-                    center: Vec3::new(-0.39, 0.74, -3.76),
-                    half_size: Vec3::new(0.30, 0.24, 0.035),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.39, 0.74, -3.76),
-                    half_size: Vec3::new(0.30, 0.24, 0.035),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-0.39, 0.74, -3.71),
-                    half_size: Vec3::new(0.075, 0.105, 0.025),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.39, 0.74, -3.71),
-                    half_size: Vec3::new(0.075, 0.105, 0.025),
-                    material: tire.clone(),
-                },
-                // Faros, sonrisa oscura y defensa roja para reconocer el personaje.
-                Cube {
-                    center: Vec3::new(-0.86, 0.14, -3.16),
-                    half_size: Vec3::new(0.20, 0.12, 0.035),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.86, 0.14, -3.16),
-                    half_size: Vec3::new(0.20, 0.12, 0.035),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, -0.13, -3.15),
-                    half_size: Vec3::new(0.48, 0.075, 0.04),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, -0.34, -3.17),
-                    half_size: Vec3::new(1.05, 0.10, 0.12),
-                    material: car.clone(),
-                },
-                // Cuatro ruedas cuadradas con un rin claro superpuesto.
-                Cube {
-                    center: Vec3::new(-1.22, -0.38, -3.72),
-                    half_size: Vec3::new(0.25, 0.42, 0.25),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.22, -0.38, -3.72),
-                    half_size: Vec3::new(0.25, 0.42, 0.25),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-1.22, -0.38, -4.95),
-                    half_size: Vec3::new(0.25, 0.42, 0.25),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.22, -0.38, -4.95),
-                    half_size: Vec3::new(0.25, 0.42, 0.25),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-1.48, -0.38, -3.72),
-                    half_size: Vec3::new(0.025, 0.18, 0.11),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.48, -0.38, -3.72),
-                    half_size: Vec3::new(0.025, 0.18, 0.11),
-                    material: glass.clone(),
-                },
-                // Estadio: barreras interiores y gradas escalonadas a ambos lados.
-                Cube {
-                    center: Vec3::new(-3.75, -0.72, -6.0),
-                    half_size: Vec3::new(0.14, 0.42, 9.0),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(3.75, -0.72, -6.0),
-                    half_size: Vec3::new(0.14, 0.42, 9.0),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-4.65, -0.55, -7.0),
-                    half_size: Vec3::new(0.72, 0.24, 8.0),
-                    material: sand.clone(),
-                },
-                Cube {
-                    center: Vec3::new(4.65, -0.55, -7.0),
-                    half_size: Vec3::new(0.72, 0.24, 8.0),
-                    material: sand.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-5.15, -0.12, -7.0),
-                    half_size: Vec3::new(0.72, 0.20, 8.0),
-                    material: car.clone(),
-                },
-                Cube {
-                    center: Vec3::new(5.15, -0.12, -7.0),
-                    half_size: Vec3::new(0.72, 0.20, 8.0),
-                    material: car.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-5.65, 0.29, -7.0),
-                    half_size: Vec3::new(0.72, 0.20, 8.0),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(5.65, 0.29, -7.0),
-                    half_size: Vec3::new(0.72, 0.20, 8.0),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-6.15, 0.70, -7.0),
-                    half_size: Vec3::new(0.72, 0.20, 8.0),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(6.15, 0.70, -7.0),
-                    half_size: Vec3::new(0.72, 0.20, 8.0),
-                    material: tire.clone(),
-                },
-                // Torres de iluminación que enmarcan la recta principal.
-                Cube {
-                    center: Vec3::new(-6.7, 2.1, -2.0),
-                    half_size: Vec3::new(0.12, 1.4, 0.12),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(6.7, 2.1, -2.0),
-                    half_size: Vec3::new(0.12, 1.4, 0.12),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-6.7, 3.45, -2.0),
-                    half_size: Vec3::new(0.55, 0.18, 0.18),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(6.7, 3.45, -2.0),
-                    half_size: Vec3::new(0.55, 0.18, 0.18),
-                    material: glass.clone(),
-                },
-                // Zona interior de pits: garajes, toldos y vehículos de apoyo.
-                Cube {
-                    center: Vec3::new(-1.65, -0.62, -9.1),
-                    half_size: Vec3::new(1.15, 0.34, 0.72),
-                    material: car.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.35, -0.62, -9.1),
-                    half_size: Vec3::new(1.15, 0.34, 0.72),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-1.65, -0.18, -9.1),
-                    half_size: Vec3::new(1.30, 0.10, 0.86),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.35, -0.18, -9.1),
-                    half_size: Vec3::new(1.30, 0.10, 0.86),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-2.0, -0.73, -11.2),
-                    half_size: Vec3::new(0.72, 0.22, 0.30),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, -0.73, -11.5),
-                    half_size: Vec3::new(0.72, 0.22, 0.30),
-                    material: car.clone(),
-                },
-                Cube {
-                    center: Vec3::new(2.0, -0.73, -11.2),
-                    half_size: Vec3::new(0.72, 0.22, 0.30),
-                    material: glass.clone(),
-                },
-                // Torre central y pantalla gigante, inspiradas en el Motor Speedway.
-                Cube {
-                    center: Vec3::new(0.0, 1.25, -12.4),
-                    half_size: Vec3::new(0.34, 2.20, 0.34),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, 3.20, -12.1),
-                    half_size: Vec3::new(1.35, 0.82, 0.18),
-                    material: car.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, 3.20, -11.90),
-                    half_size: Vec3::new(1.12, 0.62, 0.035),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-1.28, 4.08, -12.1),
-                    half_size: Vec3::new(0.12, 0.22, 0.30),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.28, 4.08, -12.1),
-                    half_size: Vec3::new(0.12, 0.22, 0.30),
-                    material: tire.clone(),
-                },
-                // Línea de salida a cuadros sobre la recta principal.
-                Cube {
-                    center: Vec3::new(-2.45, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-1.75, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-1.05, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-0.35, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.35, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.05, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(1.75, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(2.45, -1.045, -5.75),
-                    half_size: Vec3::new(0.34, 0.018, 0.34),
-                    material: tire.clone(),
-                },
-                // Arco de meta construido con cubos: aporta escala a la pista.
-                Cube {
-                    center: Vec3::new(-3.3, 0.1, -6.8),
-                    half_size: Vec3::new(0.16, 1.35, 0.16),
-                    material: sand.clone(),
-                },
-                Cube {
-                    center: Vec3::new(3.3, 0.1, -6.8),
-                    half_size: Vec3::new(0.16, 1.35, 0.16),
-                    material: sand.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.0, 1.28, -6.8),
-                    half_size: Vec3::new(3.45, 0.16, 0.16),
-                    material: tire.clone(),
-                },
-                Cube {
-                    center: Vec3::new(-0.55, 1.28, -6.60),
-                    half_size: Vec3::new(0.28, 0.15, 0.03),
-                    material: glass.clone(),
-                },
-                Cube {
-                    center: Vec3::new(0.55, 1.28, -6.60),
-                    half_size: Vec3::new(0.28, 0.15, 0.03),
-                    material: car.clone(),
-                },
-            ],
-            ellipsoids: vec![
-                // Isla verde aplanada: deja visible el asfalto alrededor y sugiere el óvalo.
-                Ellipsoid {
-                    center: Vec3::new(0.0, -1.00, -10.4),
-                    radii: Vec3::new(3.05, 0.13, 4.35),
-                    material: sand.clone(),
-                },
-                // Volúmenes principales redondeados de Rayo McQueen.
-                Ellipsoid {
-                    center: Vec3::new(0.0, 0.02, -4.35),
-                    radii: Vec3::new(1.46, 0.50, 1.18),
-                    material: car.clone(),
-                },
-                Ellipsoid {
-                    center: Vec3::new(0.0, 0.34, -3.66),
-                    radii: Vec3::new(1.25, 0.28, 0.60),
-                    material: car.clone(),
-                },
-                Ellipsoid {
-                    center: Vec3::new(0.0, 0.66, -4.45),
-                    radii: Vec3::new(0.88, 0.48, 0.66),
-                    material: car.clone(),
-                },
-                // Ruedas elipsoidales: aplanadas en X para conservar su orientación lateral.
-                Ellipsoid {
-                    center: Vec3::new(-1.32, -0.38, -3.72),
-                    radii: Vec3::new(0.22, 0.45, 0.45),
-                    material: tire.clone(),
-                },
-                Ellipsoid {
-                    center: Vec3::new(1.32, -0.38, -3.72),
-                    radii: Vec3::new(0.22, 0.45, 0.45),
-                    material: tire.clone(),
-                },
-                Ellipsoid {
-                    center: Vec3::new(-1.32, -0.38, -4.95),
-                    radii: Vec3::new(0.22, 0.45, 0.45),
-                    material: tire.clone(),
-                },
-                Ellipsoid {
-                    center: Vec3::new(1.32, -0.38, -4.95),
-                    radii: Vec3::new(0.22, 0.45, 0.45),
-                    material: tire,
                 },
             ],
             lights: vec![
                 Light {
-                    position: Vec3::new(-4.0, 7.0, 2.0),
-                    color: Color::new(1.0, 0.93, 0.82),
+                    position: Vec3::new(-9.0, 15.0, 8.0),
+                    color: Color::new(1.0, 0.95, 0.86),
                     intensity: 0.95,
                 },
                 Light {
-                    position: Vec3::new(6.7, 5.0, -9.0),
-                    color: Color::new(0.72, 0.84, 1.0),
-                    intensity: 0.45,
+                    position: Vec3::new(10.0, 11.0, -18.0),
+                    color: Color::new(0.68, 0.82, 1.0),
+                    intensity: 0.42,
                 },
             ],
             skybox: Skybox {
                 horizon: Color::new(0.58, 0.72, 0.84),
-                zenith: Color::new(0.08, 0.24, 0.48),
+                zenith: Color::new(0.07, 0.20, 0.43),
             },
         }
     }
+
     pub fn intersect(&self, ray: Ray) -> Option<Hit<'_>> {
         self.cubes
             .iter()
             .filter_map(|c| c.intersect(ray))
             .chain(self.ellipsoids.iter().filter_map(|e| e.intersect(ray)))
+            .chain(self.oval_rings.iter().filter_map(|o| o.intersect(ray)))
             .min_by(|a, b| a.distance.total_cmp(&b.distance))
     }
-    pub fn sky_color(&self, d: Vec3) -> Color {
+
+    pub fn sky_color(&self, direction: Vec3) -> Color {
         self.skybox
             .horizon
-            .mix(self.skybox.zenith, ((d.y + 1.0) * 0.5).powf(0.8))
+            .mix(self.skybox.zenith, ((direction.y + 1.0) * 0.5).powf(0.8))
     }
 }

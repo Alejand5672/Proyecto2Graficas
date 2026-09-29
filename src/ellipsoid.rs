@@ -7,6 +7,7 @@ use crate::{cube::Hit, material::Material, ray::Ray, vec3::Vec3};
 pub struct Ellipsoid {
     pub center: Vec3,
     pub radii: Vec3,
+    pub uv_offset: f32,
     pub material: Material,
 }
 
@@ -59,7 +60,7 @@ impl Ellipsoid {
             distance,
             point,
             normal,
-            u,
+            u: u + self.uv_offset,
             v,
             material: &self.material,
         })

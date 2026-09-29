@@ -4,6 +4,7 @@ mod cube;
 mod display;
 mod ellipsoid;
 mod material;
+mod oval;
 mod ray;
 mod renderer;
 mod scene;
@@ -18,9 +19,9 @@ fn main() {
     display::show(
         scene,
         RenderConfig {
-            width: 640,
-            height: 420,
-            max_bounces: 3,
+            width: 960,
+            height: 600,
+            max_bounces: 2,
         },
     );
 }
