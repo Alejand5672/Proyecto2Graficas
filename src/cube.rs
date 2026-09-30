@@ -39,9 +39,14 @@ impl Cube {
         }
         let d = if near > 0.001 { near } else { far };
         let p = o + ray.direction * d;
-        let n = if p.x.abs() >= p.y.abs() && p.x.abs() >= p.z.abs() {
+        let q = Vec3::new(
+            p.x.abs() / self.half_size.x,
+            p.y.abs() / self.half_size.y,
+            p.z.abs() / self.half_size.z,
+        );
+        let n = if q.x >= q.y && q.x >= q.z {
             Vec3::new(p.x.signum(), 0.0, 0.0)
-        } else if p.y.abs() >= p.z.abs() {
+        } else if q.y >= q.z {
             Vec3::new(0.0, p.y.signum(), 0.0)
         } else {
             Vec3::new(0.0, 0.0, p.z.signum())

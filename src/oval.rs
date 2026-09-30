@@ -25,9 +25,8 @@ impl OvalRing {
         if outer > 1.0 || inner < 1.0 {
             return None;
         }
-        let angle = z.atan2(x);
-        let u = angle / std::f32::consts::TAU + 0.5;
-        let v = ((outer.sqrt() - inner.sqrt()) * 3.0).clamp(0.0, 1.0);
+        let u = x;
+        let v = z;
         Some(Hit {
             distance,
             point,

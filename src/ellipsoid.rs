@@ -60,7 +60,7 @@ impl Ellipsoid {
             distance,
             point,
             normal,
-            u: u + self.uv_offset,
+            u: u.min(0.999999) + self.uv_offset,
             v,
             material: &self.material,
         })
