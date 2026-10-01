@@ -66,7 +66,7 @@ pub fn build(
     for (dx, y, dz, rx, ry, rz, m, uv) in [
         (0.0, 0.41, 0.0, 0.86, 0.32, 1.23, &coating, slot),
         (0.0, 0.62, -0.60, 0.76, 0.23, 0.63, &coating, slot),
-        (0.0, 0.81, 0.29, 0.55, 0.30, 0.52, glass, 0.0),
+        (0.0, 0.79, 0.29, 0.60, 0.24, 0.57, glass, 0.0),
         (-0.78, 0.34, -0.56, 0.19, 0.34, 0.34, rubber, 0.0),
         (0.78, 0.34, -0.56, 0.19, 0.34, 0.34, rubber, 0.0),
         (-0.78, 0.34, 0.59, 0.19, 0.34, 0.34, rubber, 0.0),
@@ -82,9 +82,9 @@ pub fn build(
     // Ojos sobre el frente del parabrisas, iris y pupilas opacas.
     for dx in [-0.24, 0.24] {
         for (y, dz, rx, ry, rz, m) in [
-            (0.87, -0.17, 0.23, 0.15, 0.075, white),
-            (0.88, -0.24, 0.09, 0.105, 0.025, metal),
-            (0.88, -0.263, 0.044, 0.073, 0.014, rubber),
+            (0.86, -0.20, 0.24, 0.10, 0.05, white),
+            (0.86, -0.247, 0.07, 0.08, 0.017, metal),
+            (0.86, -0.263, 0.036, 0.06, 0.012, rubber),
         ] {
             e.push(Ellipsoid {
                 center: pos(dx, y, dz),
@@ -147,4 +147,51 @@ pub fn build(
         0.043 * s,
         white,
     );
+    // Techo de pintura y números horizontales, visibles en la vista de referencia.
+    block(
+        c,
+        pos(0.0, 1.0, 0.38),
+        Vec3::new(0.40 * s, 0.035 * s, 0.32 * s),
+        &wing,
+    );
+    let mut digits = Vec::new();
+    label(
+        &mut digits,
+        ["95", "43", "86"][slot as usize],
+        Vec3::new(0.18, 0.0, 0.0),
+        0.065,
+        white,
+    );
+    for d in digits {
+        block(
+            c,
+            pos(d.center.x, 1.041, 0.18 - d.center.y),
+            Vec3::new(d.half_size.x * s, 0.004 * s, d.half_size.y * s),
+            white,
+        );
+    }
+    // Décoration de capot spécifique, sans modèle ni image externe.
+    let mut badge = white.clone();
+    badge.texture = crate::texture::Texture::Solid(if slot == 0.0 {
+        crate::color::Color::new(0.95, 0.62, 0.06)
+    } else {
+        crate::color::Color::new(0.87, 0.91, 0.90)
+    });
+    block(
+        c,
+        pos(0.0, 0.85, -0.62),
+        Vec3::new(0.25 * s, 0.018 * s, 0.16 * s),
+        &badge,
+    );
+    // La langue de McQueen rappelle le franchissement de ligne de la référence.
+    if slot == 0.0 {
+        let mut tongue = rubber.clone();
+        tongue.texture = crate::texture::Texture::Solid(crate::color::Color::new(0.48, 0.11, 0.15));
+        block(
+            c,
+            pos(0.0, 0.30, -1.47),
+            Vec3::new(0.19 * s, 0.035 * s, 0.30 * s),
+            &tongue,
+        );
+    }
 }

@@ -46,6 +46,7 @@ pub fn show(scene: Scene, config: RenderConfig) {
             (KeyboardKey::KEY_TWO, 1),
             (KeyboardKey::KEY_THREE, 2),
             (KeyboardKey::KEY_FOUR, 3),
+            (KeyboardKey::KEY_FIVE, 4),
             (KeyboardKey::KEY_M, 0),
             (KeyboardKey::KEY_R, 3),
         ] {

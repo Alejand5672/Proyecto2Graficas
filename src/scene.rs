@@ -287,6 +287,89 @@ impl Scene {
             );
         }
 
+        // Palcos con cristales de espesor real: caras separadas para refracción.
+        let mut glazing = glass.clone();
+        glazing.reflectivity = 0.48;
+        glazing.transparency = 0.35;
+        glazing.specular = 0.8;
+        for z in [-10.0_f32, -5.5, 0.0] {
+            add_cube(
+                &mut cubes,
+                Vec3::new(3.10, 0.30, z),
+                Vec3::new(1.30, 0.10, 1.65),
+                &concrete,
+            );
+            add_cube(
+                &mut cubes,
+                Vec3::new(3.10, 1.55, z),
+                Vec3::new(1.30, 0.10, 1.65),
+                &concrete,
+            );
+            // Fachada hacia la pista, con interior visible y montantes metálicos.
+            add_cube(
+                &mut cubes,
+                Vec3::new(4.32, 0.92, z),
+                Vec3::new(0.035, 0.52, 1.52),
+                &glazing,
+            );
+            add_cube(
+                &mut cubes,
+                Vec3::new(3.10, 0.92, z - 1.56),
+                Vec3::new(1.20, 0.52, 0.035),
+                &glazing,
+            );
+            for dz in [-1.58, 0.0, 1.58] {
+                add_cube(
+                    &mut cubes,
+                    Vec3::new(4.36, 0.92, z + dz),
+                    Vec3::new(0.035, 0.62, 0.035),
+                    &metal,
+                );
+            }
+            add_cube(
+                &mut cubes,
+                Vec3::new(2.10, 0.85, z),
+                Vec3::new(0.12, 0.45, 1.45),
+                &concrete,
+            );
+            // Pilares apoyados en el terreno.
+            for dx in [-1.20, 1.20] {
+                for dz in [-1.55, 1.55] {
+                    add_cube(
+                        &mut cubes,
+                        Vec3::new(3.10 + dx, -0.40, z + dz),
+                        Vec3::new(0.07, 0.70, 0.07),
+                        &metal,
+                    );
+                }
+            }
+        }
+        // Ventanales de la torre de control, bajo el marcador existente.
+        add_cube(
+            &mut cubes,
+            Vec3::new(-1.0, 1.65, -4.7),
+            Vec3::new(0.90, 0.08, 0.80),
+            &concrete,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(-1.0, 2.55, -4.7),
+            Vec3::new(0.90, 0.08, 0.80),
+            &concrete,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(-1.0, 2.10, -5.45),
+            Vec3::new(0.82, 0.37, 0.035),
+            &glazing,
+        );
+        add_cube(
+            &mut cubes,
+            Vec3::new(-0.15, 2.10, -4.7),
+            Vec3::new(0.035, 0.37, 0.72),
+            &glazing,
+        );
+
         let mut ellipsoids = Vec::new();
         crate::cars::build(
             &mut cubes,
