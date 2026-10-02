@@ -47,6 +47,7 @@ pub fn show(scene: Scene, config: RenderConfig) {
             (KeyboardKey::KEY_THREE, 2),
             (KeyboardKey::KEY_FOUR, 3),
             (KeyboardKey::KEY_FIVE, 4),
+            (KeyboardKey::KEY_SIX, 5),
             (KeyboardKey::KEY_M, 0),
             (KeyboardKey::KEY_R, 3),
         ] {
@@ -58,7 +59,7 @@ pub fn show(scene: Scene, config: RenderConfig) {
         let mouse = window.get_mouse_position();
         if window.is_mouse_button_pressed(MouseButton::MOUSE_BUTTON_LEFT) && mouse.y < 42.0 {
             let n = ((mouse.x - 14.0) / 135.0) as i32;
-            if (0..4).contains(&n) {
+            if (0..6).contains(&n) {
                 view = View::preset(n as usize);
                 changed = true;
             }
@@ -211,9 +212,16 @@ pub fn show(scene: Scene, config: RenderConfig) {
             Color::WHITE,
         );
         draw.draw_rectangle(0, 0, width, 44, Color::new(10, 17, 26, 235));
-        for (n, name) in ["1  FINAL", "2  FRONTAL", "3  LATERAL", "4  ESTADIO"]
-            .iter()
-            .enumerate()
+        for (n, name) in [
+            "1  FINAL",
+            "2  FRONTAL",
+            "3  LATERAL",
+            "4  ESTADIO",
+            "5  CRISTALES",
+            "6  NUMEROS",
+        ]
+        .iter()
+        .enumerate()
         {
             draw.draw_text(name, 20 + n as i32 * 135, 15, 16, Color::RAYWHITE);
         }

@@ -9,6 +9,12 @@ pub struct View {
 impl View {
     pub fn preset(n: usize) -> Self {
         match n {
+            5 => Self {
+                yaw: std::f32::consts::PI,
+                pitch: 1.25,
+                distance: 5.0,
+                target: Vec3::new(8.45, -0.5, -4.0),
+            },
             4 => Self {
                 yaw: 1.05,
                 pitch: 0.18,

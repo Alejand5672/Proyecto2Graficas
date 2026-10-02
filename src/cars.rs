@@ -158,14 +158,14 @@ pub fn build(
     label(
         &mut digits,
         ["95", "43", "86"][slot as usize],
-        Vec3::new(0.18, 0.0, 0.0),
-        0.065,
+        Vec3::new(0.24, 0.0, 0.0),
+        0.08,
         white,
     );
     for d in digits {
         block(
             c,
-            pos(d.center.x, 1.041, 0.18 - d.center.y),
+            pos(d.center.x, 1.041, 0.54 + d.center.y),
             Vec3::new(d.half_size.x * s, 0.004 * s, d.half_size.y * s),
             white,
         );
@@ -187,11 +187,12 @@ pub fn build(
     if slot == 0.0 {
         let mut tongue = rubber.clone();
         tongue.texture = crate::texture::Texture::Solid(crate::color::Color::new(0.48, 0.11, 0.15));
-        block(
-            c,
-            pos(0.0, 0.30, -1.47),
-            Vec3::new(0.19 * s, 0.035 * s, 0.30 * s),
-            &tongue,
-        );
+        // Elipsoide aplanado: raíz dentro de la boca y punta continua redondeada.
+        e.push(Ellipsoid {
+            center: pos(0.0, 0.37, -1.40),
+            radii: Vec3::new(0.16 * s, 0.025 * s, 0.28 * s),
+            uv_offset: 0.0,
+            material: tongue,
+        });
     }
 }

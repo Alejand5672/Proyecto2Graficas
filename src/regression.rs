@@ -44,10 +44,10 @@ fn acceleration_matches_linear_intersections() {
 #[test]
 fn tires_touch_asphalt_for_all_scales() {
     let s = Scene::base();
-    for car in 0..3 {
+    // McQueen añade un elipsoide para la lengua después de sus 17 piezas.
+    for start in [0, 18, 35] {
         for wheel in 3..7 {
-            // Each car has seven base ellipsoids followed by details (17 total).
-            let e = &s.ellipsoids[car * 17 + wheel];
+            let e = &s.ellipsoids[start + wheel];
             assert!((e.center.y - e.radii.y + 1.055).abs() < 0.0001);
         }
     }
@@ -60,4 +60,18 @@ fn glass_total_internal_reflection() {
             .refract(Vec3::new(0.0, 1.0, 0.0), 1.5)
             .is_none()
     );
+}
+
+#[test]
+fn suite_facade_is_reflective_refractive_glass() {
+    let scene = Scene::base();
+    let hit = scene
+        .intersect(Ray {
+            origin: Vec3::new(6.0, 1.10, -5.0),
+            direction: Vec3::new(-1.0, 0.0, 0.0),
+        })
+        .unwrap();
+    assert!(hit.material.reflectivity >= 0.4);
+    assert!(hit.material.transparency > 0.0);
+    assert_eq!(hit.material.ior, 1.5);
 }
