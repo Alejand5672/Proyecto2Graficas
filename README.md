@@ -1,4 +1,7 @@
-# Proyecto 2 — Final de la Copa Pistón
+# Luis Alejandro Hernandez Marquez (241424)
+# Graficas por computadora
+# Prof. Pablo Koch
+# Proyecto 2 — Inicio de la Copa Pistón
 
 Diorama 3D inspirado en la carrera inicial de *Cars*. La escena reúne a Rayo McQueen (95), El Rey (43) y Chick Hicks (86) junto a la línea de meta de un circuito estilo NASCAR, con gradas, público, pits, torre de control y palcos acristalados.
 
@@ -47,4 +50,4 @@ Las vistas también se pueden seleccionar con los botones de la barra superior.
 
 Enlace del video
 
-
+https://youtu.be/7v3zM-GNhJo
